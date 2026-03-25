@@ -1,6 +1,8 @@
 streamlit
-colorama
 rapidfuzz
-pytesseract
+colorama
+easyocr
 pillow
+numpy
 SpeechRecognition
+torch
