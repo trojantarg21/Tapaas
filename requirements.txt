@@ -1,3 +1,6 @@
 streamlit
 colorama
 rapidfuzz
+pytesseract
+pillow
+SpeechRecognition
