@@ -4,7 +4,7 @@ import detector
 st.set_page_config(page_title="Scam Detector", page_icon="🛡️")
 
 st.title("🛡️ Multilingual Scam Detector")
-st.caption("Detect phishing messages in Text, Image, and Audio")
+st.caption("Detect phishing messages in Text, Image, and Audio in English, Hindi and Marathi")
 
 st.divider()
 
