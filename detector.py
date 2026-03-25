@@ -2,8 +2,6 @@ from rapidfuzz import fuzz
 from datetime import datetime
 from colorama import Fore, Style, init
 init(autoreset=True)
-import pytesseract
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 otp_words = ["otp" , "one time password" , "otp dya", "otp pathva" , "otp send" , "otp share", "otp deu", "ओटीपी", "otp dijiye", 
 "otp bhejiye", "ओटीपी भेजिये" ]
