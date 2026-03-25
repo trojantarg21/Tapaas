@@ -1,11 +1,11 @@
 import streamlit as st
 import detector
 
-st.markdown("### 🔍 Analyze suspicious messages instantly")
 st.set_page_config(page_title="Scam Detector", page_icon="🛡️")
 
 st.title("🛡️ Multilingual Scam Detector")
-st.caption("Detect phishing messages via Text, Image, or Audio")
+st.markdown("### 🔍 Analyze suspicious messages instantly")
+st.caption("Detect phishing messages via Text, Image, or Audio in English, Hindi and Marathi")
 
 st.divider()
 
