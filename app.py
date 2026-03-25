@@ -1,6 +1,7 @@
 import streamlit as st
 import detector
 
+st.markdown("### 🔍 Analyze suspicious messages instantly")
 st.set_page_config(page_title="Scam Detector", page_icon="🛡️")
 
 st.title("🛡️ Multilingual Scam Detector")
@@ -28,7 +29,7 @@ with tab1:
             else:
                 st.success("✅ Safe Message")
 
-            st.write("### Score:", result["score"])
+            st.metric(label="Risk Score", value=result["score"])
             st.markdown("---")
 
             st.subheader("Explanation")
@@ -38,6 +39,7 @@ with tab1:
             else:
                 st.info("No strong threat indicators detected.")
 
+            st.markdown("---")
             st.subheader("Advice")
             if result["reasons"]:
                 for r in result["reasons"]:
@@ -74,7 +76,7 @@ with tab2:
             else:
                 st.success("✅ Safe Message")
 
-            st.write("### Score:", result["score"])
+            st.metric(label="Risk Score", value=result["score"])
             st.markdown("---")
 
             st.subheader("Explanation")
@@ -83,7 +85,8 @@ with tab2:
                     st.write("- " + detector.explanations.get(r, "Unknown"))
             else:
                 st.info("No strong threat indicators detected.")
-
+ 
+            st.markdown("---")
             st.subheader("Advice")
             if result["reasons"]:
                 for r in result["reasons"]:
@@ -119,7 +122,7 @@ with tab3:
             else:
                 st.success("✅ Safe Message")
 
-            st.write("### Score:", result["score"])
+            st.metric(label="Risk Score", value=result["score"])
             st.markdown("---")
 
             st.subheader("Explanation")
@@ -129,6 +132,7 @@ with tab3:
             else:
                 st.info("No strong threat indicators detected.")
 
+            st.markdown("---")
             st.subheader("Advice")
             if result["reasons"]:
                 for r in result["reasons"]:
@@ -136,3 +140,5 @@ with tab3:
 
         except Exception:
             st.error("Could not process audio. Please upload a clear WAV/MP3 file.")
+
+st.caption("ThIS TOOL PROVIDES ADVISORY DETECTION. ALWAYS VERIFY WITH OFFICIAL SOURCES.")
