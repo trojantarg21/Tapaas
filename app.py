@@ -4,14 +4,14 @@ import detector
 st.set_page_config(page_title="Scam Detector", page_icon="🛡️")
 
 st.title("🛡️ Multilingual Scam Detector")
-st.caption("Detect phishing messages in Text, Image, and Audio in English, Hindi and Marathi")
+st.caption("Detect phishing messages via Text, Image, or Audio")
 
 st.divider()
 
-# Tabs for input modes
+# Tabs
 tab1, tab2, tab3 = st.tabs(["📝 Text", "🖼️ Image", "🎤 Audio"])
 
-#TEXT INPUT
+# ---------------- TEXT INPUT ----------------
 with tab1:
     user_input = st.text_area("Enter message")
 
@@ -21,7 +21,6 @@ with tab1:
         else:
             result = detector.detect_scam(user_input)
 
-            # Output
             if result["threat"] == "phishing":
                 st.error("🚨 PHISHING DETECTED")
             elif result["threat"] == "suspicious":
@@ -30,10 +29,8 @@ with tab1:
                 st.success("✅ Safe Message")
 
             st.write("### Score:", result["score"])
-
             st.markdown("---")
 
-            # Explanation
             st.subheader("Explanation")
             if result["reasons"]:
                 for r in result["reasons"]:
@@ -41,31 +38,35 @@ with tab1:
             else:
                 st.info("No strong threat indicators detected.")
 
-            # Advice
             st.subheader("Advice")
             if result["reasons"]:
                 for r in result["reasons"]:
                     st.write("- " + detector.advice_map.get(r, "Be cautious"))
 
-#IMAGE INPUT
+# ---------------- IMAGE INPUT (EasyOCR) ----------------
 with tab2:
     uploaded_file = st.file_uploader("Upload image (SMS screenshot)", type=["png", "jpg", "jpeg"])
 
     if uploaded_file:
         from PIL import Image
+        import numpy as np
+        import easyocr
+
         image = Image.open(uploaded_file)
         st.image(image, caption="Uploaded Image")
 
         try:
-            import pytesseract
-            text = pytesseract.image_to_string(image)
+            reader = easyocr.Reader(['en'])  # add 'hi' if needed
+            img_array = np.array(image)
+
+            results = reader.readtext(img_array, detail=0)
+            text = " ".join(results)
 
             st.subheader("Extracted Text")
             st.write(text)
 
             result = detector.detect_scam(text)
 
-            # Output
             if result["threat"] == "phishing":
                 st.error("🚨 PHISHING DETECTED")
             elif result["threat"] == "suspicious":
@@ -74,7 +75,6 @@ with tab2:
                 st.success("✅ Safe Message")
 
             st.write("### Score:", result["score"])
-
             st.markdown("---")
 
             st.subheader("Explanation")
@@ -89,12 +89,12 @@ with tab2:
                 for r in result["reasons"]:
                     st.write("- " + detector.advice_map.get(r, "Be cautious"))
 
-        except:
-            st.warning("OCR may not work on cloud. Try text input instead.")
+        except Exception as e:
+            st.error(f"OCR failed: {e}")
 
-#AUDIO INPUT
+# ---------------- AUDIO INPUT ----------------
 with tab3:
-    audio_file = st.file_uploader("Upload audio message (WAV recommended)", type=["wav", "mp3"])
+    audio_file = st.file_uploader("Upload audio (WAV recommended)", type=["wav", "mp3"])
 
     if audio_file:
         import speech_recognition as sr
@@ -112,7 +112,6 @@ with tab3:
 
             result = detector.detect_scam(text)
 
-            # Output
             if result["threat"] == "phishing":
                 st.error("🚨 PHISHING DETECTED")
             elif result["threat"] == "suspicious":
@@ -121,7 +120,6 @@ with tab3:
                 st.success("✅ Safe Message")
 
             st.write("### Score:", result["score"])
-
             st.markdown("---")
 
             st.subheader("Explanation")
@@ -136,5 +134,5 @@ with tab3:
                 for r in result["reasons"]:
                     st.write("- " + detector.advice_map.get(r, "Be cautious"))
 
-        except:
-            st.error("Could not process audio. Please upload a clear file.")
+        except Exception:
+            st.error("Could not process audio. Please upload a clear WAV/MP3 file.")
