@@ -1,29 +1,23 @@
 import streamlit as st
-from detector import detect_scam
-from detector import explanations, advice_map
+from detector import detect_scam, explanations, advice_map
 
-st.set_page_config(page_title="Scam Detector", page_icon="🛡️")
+st.title("🛡️ Multilingual Scam Detector")
 
-st.title("Multilingual Scam Detector")
-st.write("Analyze suspicious messages using AI + rules")
+user_input = st.text_area("Enter message")
 
-# Input box
-user_input = st.text_area("Enter message to analyze:")
-
-# Button
 if st.button("Analyze"):
     if user_input.strip() == "":
         st.warning("Please enter a message")
     else:
         result = detect_scam(user_input)
 
-        # Threat display
+        # Threat
         if result["threat"] == "phishing":
-            st.error("PHISHING DETECTED")
+            st.error("🚨 PHISHING DETECTED")
         elif result["threat"] == "suspicious":
-            st.warning("Suspicious Message")
+            st.warning("⚠️ Suspicious Message")
         else:
-            st.success("Safe Message")
+            st.success("✅ Safe Message")
 
         st.write("**Score:**", result["score"])
 
