@@ -6,15 +6,19 @@ st.title("🛡️ Scam Detector")
 user_input = st.text_area("Enter message")
 
 if st.button("Analyze"):
-    result = detector.detect_scam(user_input)
+    try:
+        result = detector.detect_scam(user_input)
 
-    st.write("Threat:", result["threat"])
-    st.write("Score:", result["score"])
+        st.write("Threat:", result["threat"])
+        st.write("Score:", result["score"])
 
-    st.subheader("Explanation")
-    for r in result["reasons"]:
-        st.write("-", detector.explanations.get(r, "Unknown"))
+        st.subheader("Explanation")
+        for r in result["reasons"]:
+            st.write("-", detector.explanations.get(r, "Unknown"))
 
-    st.subheader("Advice")
-    for r in result["reasons"]:
-        st.write("-", detector.advice_map.get(r, "Be cautious"))
+        st.subheader("Advice")
+        for r in result["reasons"]:
+            st.write("-", detector.advice_map.get(r, "Be cautious"))
+
+    except Exception as e:
+        st.error(f"Error: {e}")
