@@ -2,6 +2,8 @@ import streamlit as st
 import detector
 
 st.title("🛡️ Scam Detector")
+st.caption("Detect phishing messages in English, Hindi, and Marathi")
+st.divider()
 
 user_input = st.text_area("Enter message")
 
@@ -11,6 +13,7 @@ if st.button("Analyze"):
 
         st.write("Threat:", result["threat"])
         st.write("Score:", result["score"])
+        st.markdown("---")
 
         st.subheader("Explanation")
         for r in result["reasons"]:
