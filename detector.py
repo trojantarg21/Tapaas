@@ -146,3 +146,13 @@ def detect_scam(text):
         "score": score,
         "reasons": list(reasons)
     }
+
+if __name__ == "__main__":
+    while True:
+        msg = input("\nEnter message (type 'exit' to quit): ")
+
+        if msg.lower() == "exit":
+            print("Exiting tool...")
+            break
+
+        detect_scam(msg)
