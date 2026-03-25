@@ -14,7 +14,7 @@ if st.button("Analyze"):
     else:
         result = detect_scam(user_input)
 
-        # 🚨 Threat Display
+        # Threat Display
         if result["threat"] == "phishing":
             st.error("🚨 PHISHING DETECTED")
         elif result["threat"] == "suspicious":
@@ -22,10 +22,10 @@ if st.button("Analyze"):
         else:
             st.success("✅ Safe Message")
 
-        # 📊 Score
+        # Score
         st.write("### Score:", result["score"])
 
-        # 🧠 Explanation
+        # Explanation
         st.subheader("Explanation")
         if result["reasons"]:
             for r in result["reasons"]:
@@ -33,7 +33,7 @@ if st.button("Analyze"):
         else:
             st.write("No major threat indicators detected.")
 
-        # 💡 Advice
+        # Advice
         st.subheader("Advice")
         if result["reasons"]:
             for r in result["reasons"]:
