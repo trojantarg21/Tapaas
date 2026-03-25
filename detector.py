@@ -2,6 +2,8 @@ from rapidfuzz import fuzz
 from datetime import datetime
 from colorama import Fore, Style, init
 init(autoreset=True)
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 otp_words = ["otp" , "one time password" , "otp dya", "otp pathva" , "otp send" , "otp share", "otp deu", "ओटीपी", "otp dijiye", 
 "otp bhejiye", "ओटीपी भेजिये" ]
@@ -22,7 +24,7 @@ safe_patterns = ["otp share mat karo", "otp share nahi karo","do not share otp",
 "otp mat bhejiye", "otp na bheje", "ओटीपी ना भेजे", "ओ टी पी देउ नका", "otp share mat kare", "ओटीपी शेयर ना करें"]
 
 action_words = [
-    "click", "visit", "open", "use", "check", "वापरा" , "इस्तेमाल", "करा", "करें"
+    "click", "visit", "open", "use", "check", "वापरा" , "इस्तेमाल", "करा", "करें" ,
     "kar", "kara", "karaycha", "vapra"]
 
 link_indicators = [
