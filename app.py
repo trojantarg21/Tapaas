@@ -23,6 +23,22 @@ def detect_language_safe(text):
 
     except:
         return "Unknown"
+    
+def get_explanations_by_language(language):
+    if language == "Hindi":
+        return detector.explanations_hi
+    elif language == "Marathi":
+        return detector.explanations_mr
+    else:
+        return detector.explanations
+
+def get_advice_by_language(language):
+    if language == "Hindi":
+        return detector.advice_map_hi
+    elif language == "Marathi":
+        return detector.advice_map_mr
+    else:
+        return detector.advice_map
 
 #log file generation in pdf format
 def generate_pdf(logs):
@@ -78,12 +94,17 @@ def highlight_text(text, reasons):
     return text
 
 def show_results(result, original_text):
+
     threat = result["threat"]
     score = result["score"]
     reasons = result["reasons"]
 
     language = detect_language_safe(original_text)
     st.info(f"🌍 Detected Language: {language}")
+
+    language = detect_language_safe(original_text)
+    selected_explanations = get_explanations_by_language(language)
+    selected_advice = get_advice_by_language(language)
 
     color = get_color(threat)
 
@@ -110,7 +131,7 @@ def show_results(result, original_text):
 
     if reasons:
         for r in reasons:
-            st.write("- " + detector.explanations.get(r, "No suspicious pattern detected"))
+            st.write("- " + selected_explanations.get(r, "No suspicious pattern detected"))
     else:
         st.success("No suspicious patterns detected.")
 
@@ -121,7 +142,7 @@ def show_results(result, original_text):
 
     if reasons:
         for r in reasons:
-            st.write("- " + detector.advice_map.get(r, "No action needed"))
+            st.write("- " + selected_advice.get(r, "No action needed"))
     else:
         st.success("No action needed. This message appears safe.")
 
