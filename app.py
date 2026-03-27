@@ -1,6 +1,5 @@
 import streamlit as st
 import detector
-import os
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
@@ -20,9 +19,6 @@ def generate_pdf(logs):
     with open("logs_report.pdf", "rb") as f:
         return f.read()
     
-if os.path.exists("logs.txt"):
-    os.remove("logs.txt")
-
 st.set_page_config(page_title="Scam Detector", page_icon="🛡️")
 
 st.title("🛡️ Multilingual Scam Detector")
