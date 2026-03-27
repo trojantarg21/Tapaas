@@ -203,8 +203,11 @@ with tab4:
         st.warning("No logs file found yet. Run some detections first.")
 
     if st.button("🗑️ Clear Logs"):
-       open("logs.txt", "w").close()
-       st.success("Logs cleared!")
+      with open("logs.txt", "w", encoding="utf-8") as f:
+        f.truncate(0)
+
+      st.success("Logs cleared!")
+      st.rerun()
 
     with open("logs.txt", "r", encoding="utf-8") as f:
        st.download_button("⬇️ Download Logs", f, file_name="logs.txt")
