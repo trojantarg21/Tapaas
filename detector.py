@@ -59,10 +59,28 @@ def clean_text(text):
     text = text.replace(" ","")
     return text
 
+def no_suspicious_text(text):
+   raw_text = text
+   text = clean_text(text)
+   words = text.split()
+   if len(words) <=2:
+      return True
+   else:
+      return False
 
 def detect_scam(text):
 
     reasons = set()
+    threat = ""
+    score = 0
+
+    if no_suspicious_text(text) is True:
+       return {
+          "message" : raw_text,
+          "threat" : "safe",
+          "score": 0,
+          "reasons": []
+       }
 
     raw_text = text
     text = clean_text(text)
@@ -89,9 +107,6 @@ def detect_scam(text):
     otp_detected = any(fuzzy_match(word.replace(" ", ""), text) for word in otp_words)
     kyc_detected = any(fuzzy_match(word.replace(" ", ""), text) for word in kyc_words)
     reward_detected = any(fuzzy_match(word.replace(" ", ""), text) for word in reward_words)
-
-    threat = ""
-    score = 0
 
     #Score updation
     if action_detected:
