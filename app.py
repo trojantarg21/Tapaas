@@ -202,12 +202,12 @@ with tab4:
     except FileNotFoundError:
         st.warning("No logs file found yet. Run some detections first.")
 
-if st.button("🗑️ Clear Logs"):
-    open("logs.txt", "w").close()
-    st.success("Logs cleared!")
+    if st.button("🗑️ Clear Logs"):
+       open("logs.txt", "w").close()
+       st.success("Logs cleared!")
 
-with open("logs.txt", "r", encoding="utf-8") as f:
-    st.download_button("⬇️ Download Logs", f, file_name="logs.txt")
+    with open("logs.txt", "r", encoding="utf-8") as f:
+       st.download_button("⬇️ Download Logs", f, file_name="logs.txt")
 
 
 
