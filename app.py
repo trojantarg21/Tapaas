@@ -9,7 +9,82 @@ st.caption("Detect phishing messages via Text, Image, or Audio in English, Hindi
 
 st.divider()
 
-# Tabs
+# ---------- Helper Functions ----------
+
+def get_color(threat):
+    if threat == "safe":
+        return "green"
+    elif threat == "suspicious":
+        return "orange"
+    else:
+        return "red"
+
+def highlight_text(text, reasons):
+    keywords = {
+        "otp": ["otp"],
+        "link": ["http", "www", "link"],
+        "kyc": ["kyc"],
+        "urgency": ["urgent", "now", "immediately"],
+        "action": ["click", "visit", "open"],
+        "fear": ["blocked", "suspended", "closed"]
+    }
+
+    text_lower = text.lower()
+
+    for r in reasons:
+        for word in keywords.get(r, []):
+            if word in text_lower:
+                text = text.replace(word, f":red[{word}]")
+
+    return text
+
+def show_results(result, original_text):
+    threat = result["threat"]
+    score = result["score"]
+    reasons = result["reasons"]
+
+    color = get_color(threat)
+
+    # Threat Display
+    st.markdown(f"""
+    ### 🛡️ Threat Level: <span style='color:{color}'>{threat.upper()}</span>
+    """, unsafe_allow_html=True)
+
+    # Score
+    st.metric(label="Risk Score", value=score)
+    st.progress(min(score / 6, 1.0))
+
+    st.markdown("---")
+
+    # Highlighted Message
+    st.subheader("Analyzed Message")
+    highlighted = highlight_text(original_text, reasons)
+    st.markdown(highlighted)
+
+    st.markdown("---")
+
+    # Explanation
+    st.subheader("Explanation")
+
+    if reasons:
+        for r in reasons:
+            st.write("- " + detector.explanations.get(r, "No suspicious pattern detected"))
+    else:
+        st.success("No suspicious patterns detected.")
+
+    st.markdown("---")
+
+    # Advice
+    st.subheader("Advice")
+
+    if reasons:
+        for r in reasons:
+            st.write("- " + detector.advice_map.get(r, "No action needed"))
+    else:
+        st.success("No action needed. This message appears safe.")
+
+# ---------- Tabs ----------
+
 tab1, tab2, tab3 = st.tabs(["📝 Text", "🖼️ Image", "🎤 Audio"])
 
 # ---------------- TEXT INPUT ----------------
@@ -29,23 +104,9 @@ with tab1:
             else:
                 st.success("✅ Safe Message")
 
-            st.metric(label="Risk Score", value=result["score"])
-            st.markdown("---")
+            show_results(result, user_input)
 
-            st.subheader("Explanation")
-            if result["reasons"]:
-                for r in result["reasons"]:
-                    st.write("- " + detector.explanations.get(r, "Unknown"))
-            else:
-                st.info("No strong threat indicators detected.")
-
-            st.markdown("---")
-            st.subheader("Advice")
-            if result["reasons"]:
-                for r in result["reasons"]:
-                    st.write("- " + detector.advice_map.get(r, "Be cautious"))
-
-# ---------------- IMAGE INPUT (EasyOCR) ----------------
+# ---------------- IMAGE INPUT ----------------
 with tab2:
     uploaded_file = st.file_uploader("Upload image (SMS screenshot)", type=["png", "jpg", "jpeg"])
 
@@ -58,7 +119,7 @@ with tab2:
         st.image(image, caption="Uploaded Image")
 
         try:
-            reader = easyocr.Reader(['en'])  # add 'hi' if needed
+            reader = easyocr.Reader(['en'])
             img_array = np.array(image)
 
             results = reader.readtext(img_array, detail=0)
@@ -76,21 +137,7 @@ with tab2:
             else:
                 st.success("✅ Safe Message")
 
-            st.metric(label="Risk Score", value=result["score"])
-            st.markdown("---")
-
-            st.subheader("Explanation")
-            if result["reasons"]:
-                for r in result["reasons"]:
-                    st.write("- " + detector.explanations.get(r, "Unknown"))
-            else:
-                st.info("No strong threat indicators detected.")
- 
-            st.markdown("---")
-            st.subheader("Advice")
-            if result["reasons"]:
-                for r in result["reasons"]:
-                    st.write("- " + detector.advice_map.get(r, "Be cautious"))
+            show_results(result, text)
 
         except Exception as e:
             st.error(f"OCR failed: {e}")
@@ -122,23 +169,15 @@ with tab3:
             else:
                 st.success("✅ Safe Message")
 
-            st.metric(label="Risk Score", value=result["score"])
-            st.markdown("---")
-
-            st.subheader("Explanation")
-            if result["reasons"]:
-                for r in result["reasons"]:
-                    st.write("- " + detector.explanations.get(r, "Unknown"))
-            else:
-                st.info("No strong threat indicators detected.")
-
-            st.markdown("---")
-            st.subheader("Advice")
-            if result["reasons"]:
-                for r in result["reasons"]:
-                    st.write("- " + detector.advice_map.get(r, "Be cautious"))
+            show_results(result, text)
 
         except Exception:
             st.error("Could not process audio. Please upload a clear WAV/MP3 file.")
 
-st.caption("ThIS TOOL PROVIDES ADVISORY DETECTION. ALWAYS VERIFY WITH OFFICIAL SOURCES.")
+        st.markdown("---")
+
+st.caption("THIS TOOL PROVIDES ADVISORY DETECTION. ALWAYS VERIFY WITH OFFICIAL SOURCES.")
+
+
+
+st.caption("THIS TOOL PROVIDES ADVISORY DETECTION. ALWAYS VERIFY WITH OFFICIAL SOURCES.")
