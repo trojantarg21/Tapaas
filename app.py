@@ -6,18 +6,20 @@ from langdetect import detect, DetectorFactory
 
 DetectorFactory.seed = 0  # for consistent results
 
-def detect_language(text):
+def detect_language_safe(text):
+    if len(text.split()) < 3:
+        return "Not enough text"
+
     try:
         lang = detect(text)
 
-        if lang == "en":
-            return "English"
-        elif lang == "hi":
-            return "Hindi"
-        elif lang == "mr":
-            return "Marathi"
-        else:
-            return lang.upper()
+        mapping = {
+            "en": "English",
+            "hi": "Hindi",
+            "mr": "Marathi"
+        }
+
+        return mapping.get(lang, "Unknown")
 
     except:
         return "Unknown"
@@ -80,7 +82,7 @@ def show_results(result, original_text):
     score = result["score"]
     reasons = result["reasons"]
 
-    language = detect_language(original_text)
+    language = detect_language_safe(original_text)
     st.info(f"🌍 Detected Language: {language}")
 
     color = get_color(threat)
