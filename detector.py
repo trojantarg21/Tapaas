@@ -79,7 +79,7 @@ def detect_scam(text):
           "message" : raw_text,
           "threat" : "safe",
           "score": 0,
-          "reasons": []
+          "reasons": 
        }
 
     raw_text = text
@@ -96,7 +96,7 @@ def detect_scam(text):
             "message": raw_text,
             "threat": "safe",
             "score": 0,
-            "reasons": []
+            "reasons": "Simple non-suspicious input"
         }
 
     action_detected = any(word in raw_text.lower()  for word in action_words)
