@@ -2,6 +2,25 @@ import streamlit as st
 import detector
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
+from langdetect import detect, DetectorFactory
+
+DetectorFactory.seed = 0  # for consistent results
+
+def detect_language(text):
+    try:
+        lang = detect(text)
+
+        if lang == "en":
+            return "English"
+        elif lang == "hi":
+            return "Hindi"
+        elif lang == "mr":
+            return "Marathi"
+        else:
+            return lang.upper()
+
+    except:
+        return "Unknown"
 
 #log file generation in pdf format
 def generate_pdf(logs):
@@ -60,6 +79,9 @@ def show_results(result, original_text):
     threat = result["threat"]
     score = result["score"]
     reasons = result["reasons"]
+
+    language = detect_language(original_text)
+    st.info(f"🌍 Detected Language: {language}")
 
     color = get_color(threat)
 
