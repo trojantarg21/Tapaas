@@ -1,5 +1,23 @@
 import streamlit as st
 import detector
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+
+#log file generation in pdf format
+def generate_pdf(logs):
+    doc = SimpleDocTemplate("logs_report.pdf")
+    styles = getSampleStyleSheet()
+
+    content = []
+
+    for log in logs:
+        content.append(Paragraph(log, styles["Normal"]))
+        content.append(Spacer(1, 10))
+
+    doc.build(content)
+
+    with open("logs_report.pdf", "rb") as f:
+        return f.read()
 
 st.set_page_config(page_title="Scam Detector", page_icon="🛡️")
 
@@ -175,8 +193,18 @@ with tab3:
             st.error("Could not process audio. Please upload a clear WAV/MP3 file.")
 
 # ---------------- LOGS VIEWER ----------------
+# ---------------- LOGS VIEWER ----------------
 with tab4:
     st.subheader("📜 Detection Logs")
+
+    # --- Controls ---
+    search_query = st.text_input("🔍 Search logs")
+    filter_option = st.selectbox(
+        "Filter by threat level",
+        ["ALL", "SAFE", "SUSPICIOUS", "PHISHING"]
+    )
+
+    logs = []
 
     try:
         with open("logs.txt", "r", encoding="utf-8") as f:
@@ -185,32 +213,57 @@ with tab4:
         if not logs:
             st.info("No logs available yet.")
         else:
-            # Show latest first
-            logs = logs[::-1]
+            logs = logs[::-1]  # latest first
 
-            # Optional: limit to last 20 logs
-            logs = logs[:20]
+            filtered_logs = []
 
             for log in logs:
-                if "PHISHING" in log:
-                    st.error(log.strip())
-                elif "SUSPICIOUS" in log:
-                    st.warning(log.strip())
-                else:
-                    st.success(log.strip())
+                log_upper = log.upper()
+
+                # Filter
+                if filter_option != "ALL" and filter_option not in log_upper:
+                    continue
+
+                # Search
+                if search_query and search_query.lower() not in log.lower():
+                    continue
+
+                filtered_logs.append(log)
+
+            if not filtered_logs:
+                st.warning("No matching logs found.")
+            else:
+                for log in filtered_logs:
+                    if "PHISHING" in log:
+                        st.error(log.strip())
+                    elif "SUSPICIOUS" in log:
+                        st.warning(log.strip())
+                    else:
+                        st.success(log.strip())
 
     except FileNotFoundError:
-        st.warning("No logs file found yet. Run some detections first.")
+        st.warning("No logs file found yet.")
 
+    # -------- CLEAR LOGS --------
     if st.button("🗑️ Clear Logs"):
-      with open("logs.txt", "w", encoding="utf-8") as f:
-        f.truncate(0)
+        with open("logs.txt", "w", encoding="utf-8") as f:
+            f.truncate(0)
 
-      st.success("Logs cleared!")
-      st.rerun()
+        st.success("Logs cleared!")
+        st.rerun()
 
-    with open("logs.txt", "r", encoding="utf-8") as f:
-       st.download_button("⬇️ Download Logs", f, file_name="logs.txt")
+    # -------- DOWNLOAD PDF --------
+    if logs:
+        pdf_data = generate_pdf(logs)
+
+        st.download_button(
+            label="📄 Download Logs as PDF",
+            data=pdf_data,
+            file_name="scam_detection_logs.pdf",
+            mime="application/pdf"
+        )
+    else:
+        st.warning("No logs to export.")
 
 
 
