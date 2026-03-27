@@ -39,7 +39,8 @@ explanations = {
     "reward": "The message is trying to lure you with a fake reward.",
     "fear": "The message uses fear tactics to pressure the user." ,
     "urgency": "The message creates urgency to pressure you." , 
-    "action": "The message is requesting for some action"
+    "action": "The message is requesting for some action" , 
+    "safe": "No suspicious patterns detected."
 }
 
 advice_map = {
@@ -49,7 +50,8 @@ advice_map = {
     "reward": "Verify rewards from official sources.",
     "fear": "Do not panic. Verify the message from official sources.",
     "urgency": "Take time and verify before acting.",
-    "action": "Proceed only after verifying"
+    "action": "Proceed only after verifying",
+    "safe": "No action needed."
 }
 
 def fuzzy_match(word, text, threshold=80):
@@ -65,7 +67,7 @@ def no_suspicious_text(text):
    text_lower = text.lower()
    words = text_lower.split()
 
-   suspicious_words = action_words + urgency_words + ["otp","link","kyc","account","verify","bank"]
+   suspicious_words = action_words + urgency_words + ["otp","link","kyc","account","verify"]
 
    if len(words) <=2 and text.isalpha():
       if not any(word in text_lower for word in suspicious_words):
@@ -87,7 +89,7 @@ def detect_scam(text):
           "message" : text,
           "threat" : "safe",
           "score": 0,
-          "reasons": ["Simple non-suspicious input"]
+          "reasons": ["safe"]
        }
 
     text = clean_text(text)
@@ -103,7 +105,7 @@ def detect_scam(text):
             "message": raw_text,
             "threat": "safe",
             "score": 0,
-            "reasons": []
+            "reasons": ["safe"]
         }
 
     action_detected = any(word in raw_text.lower()  for word in action_words)
