@@ -30,9 +30,9 @@ explanations = {
     "link": "The message contains a link which could lead to phishing sites.",
     "kyc": "The message is asking for KYC or personal details.",
     "reward": "The message is trying to lure you with a fake reward.",
-    "fear": "The message uses fear tactics to pressure the user." ,
-    "urgency": "The message creates urgency to pressure you." , 
-    "action": "The message is requesting for some action" , 
+    "fear": "The message uses fear tactics to pressure the user.",
+    "urgency": "The message creates urgency to pressure you.",
+    "action": "The message is requesting for some action",
     "safe": "No suspicious patterns detected."
 }
 
@@ -47,15 +47,15 @@ advice_map = {
     "safe": "No action needed."
 }
 
+
 def fuzzy_match(word, text, threshold=80):
     return fuzz.partial_ratio(word, text) >= threshold
 
 def clean_text(text):
     text = text.lower()
-    text = text.replace("0","o")
+    text = text.replace("0", "o")
     return text
 
-#Real link detection
 def has_real_link(text):
     text = text.lower()
     return (
@@ -66,19 +66,25 @@ def has_real_link(text):
         ".in" in text
     )
 
-# to avoid false positives
+def log_result(threat, score, message):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open("logs.txt", "a", encoding="utf-8") as f:
+        f.write(f"[{timestamp}] {threat.upper()} | Score: {score} | Message: {message}\n")
+
 def no_suspicious_text(text):
-   text_lower = text.lower()
-   words = text_lower.split()
+    text_lower = text.lower()
+    words = text_lower.split()
 
-   suspicious_words = action_words + urgency_words + ["otp","link","kyc","account","verify"]
+    suspicious_words = action_words + urgency_words + ["otp","link","kyc","account","verify"]
 
-   if len(words) <=2 and text.isalpha():
-      if not any(word in text_lower for word in suspicious_words):
-       return True
-   
-   return False
+    if len(words) <= 2 and text.isalpha():
+        if not any(word in text_lower for word in suspicious_words):
+            return True
 
+    return False
+
+def is_single_word(text):
+    return len(text.strip().split()) == 1
 
 def detect_scam(text):
 
@@ -87,35 +93,36 @@ def detect_scam(text):
     score = 0
     
     raw_text = text
-    
-    def is_single_word(text):
-     return len(text.strip().split()) == 1 
-        
+
     # SAFE override
-    if no_suspicious_text(text) is_single_word(text):
-       return {
-          "message" : text,
-          "threat" : "safe",
-          "score": 0,
-          "reasons": ["safe"]
-       }
+    if no_suspicious_text(text) or is_single_word(text):
+        log_result("safe", 0, raw_text)
 
-    text = clean_text(text)
-
-    # Safe awareness messages
-    if any(word in raw_text.lower() for word in safe_patterns):
-      return {
+        return {
             "message": raw_text,
             "threat": "safe",
             "score": 0,
             "reasons": ["safe"]
         }
 
+    text = clean_text(text)
+
+    # Safe messages
+    if any(word in raw_text.lower() for word in safe_patterns):
+        log_result("safe", 0, raw_text)
+
+        return {
+            "message": raw_text,
+            "threat": "safe",
+            "score": 0,
+            "reasons": ["safe"]
+        }
+
+    # Detection signals
     action_detected = any(word in raw_text.lower() for word in action_words)
     fear_detected = any(word in raw_text.lower() for word in fear_words)
     urgency_detected = any(word in raw_text.lower() for word in urgency_words)
 
-    #link detection
     link_detected = has_real_link(raw_text)
     link_word_detected = "link" in raw_text.lower()
 
@@ -123,7 +130,7 @@ def detect_scam(text):
     kyc_detected = any(fuzzy_match(word.replace(" ", ""), text) for word in kyc_words)
     reward_detected = any(fuzzy_match(word.replace(" ", ""), text) for word in reward_words)
 
-    # Score updation
+    # Scoring
     if action_detected:
         score += 1
         reasons.add("action")
@@ -147,38 +154,35 @@ def detect_scam(text):
     if reward_detected:
         score += 1
         reasons.add("reward")
-        
+
     if link_detected:
         score += 2
         reasons.add("link")
-
     elif link_word_detected and action_detected:
-        score += 1   # weaker signal
+        score += 1
         reasons.add("action")
 
-    # High-risk patterns (ONLY real links)
+    # High-risk patterns
     if otp_detected and (action_detected or link_detected):
-      threat = "phishing"
+        threat = "phishing"
 
     elif kyc_detected and (link_detected or urgency_detected):
-      threat = "phishing"
+        threat = "phishing"
 
-    elif reward_detected and link_detected: 
-      threat = "phishing"
+    elif reward_detected and link_detected:
+        threat = "phishing"
 
     # Classification
-    if not threat:  
-     if score <= 2:
-        threat = "safe"
-     elif score <= 4:
-        threat = "suspicious"
-     else:
-        threat = "phishing"
-    
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if not threat:
+        if score <= 2:
+            threat = "safe"
+        elif score <= 4:
+            threat = "suspicious"
+        else:
+            threat = "phishing"
 
-    with open("logs.txt", "a", encoding="utf-8") as f:
-      f.write(f"[{timestamp}] {threat.upper()} | Score: {score} | Message: {raw_text}\n")
+    # FINAL LOGGING
+    log_result(threat, score, raw_text)
 
     return {
         "message": raw_text,
@@ -196,4 +200,4 @@ if __name__ == "__main__":
             print("Exiting tool...")
             break
 
-        detect_scam(msg)
+        print(detect_scam(msg))
