@@ -55,7 +55,7 @@ def clean_text(text):
     text = text.replace("0","o")
     return text
 
-# ✅ NEW: Real link detection (NO regex)
+#Real link detection
 def has_real_link(text):
     text = text.lower()
     return (
@@ -87,9 +87,12 @@ def detect_scam(text):
     score = 0
     
     raw_text = text
-
+    
+    def is_single_word(text):
+     return len(text.strip().split()) == 1 
+        
     # SAFE override
-    if no_suspicious_text(text):
+    if no_suspicious_text(text) is_single_word(text):
        return {
           "message" : text,
           "threat" : "safe",
@@ -112,7 +115,7 @@ def detect_scam(text):
     fear_detected = any(word in raw_text.lower() for word in fear_words)
     urgency_detected = any(word in raw_text.lower() for word in urgency_words)
 
-    # ✅ NEW: Proper link detection
+    #link detection
     link_detected = has_real_link(raw_text)
     link_word_detected = "link" in raw_text.lower()
 
@@ -144,8 +147,7 @@ def detect_scam(text):
     if reward_detected:
         score += 1
         reasons.add("reward")
-
-    # ✅ Updated link scoring
+        
     if link_detected:
         score += 2
         reasons.add("link")
