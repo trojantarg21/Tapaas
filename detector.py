@@ -11,10 +11,6 @@ fear_words = ["account closed", "account terminated", "account band hoil", "acco
 
 kyc_words = ["kyc", "kyc update", "kyc pending", "verify kyc", "confirm account", "update details", "माहिती अपडेट करा","KYC अपडेट", "update your kyc"]
 
-link_words = ["visit link", "visit the link", "click the link" , "click on the link", "click link", "link vapra", 
-"use link", "link visit kara", "link use karo", "link use kara",
-"लिंक वापरा" ,"link istemal", "लिंक इस्तेमाल"]
-
 reward_words = ["won a reward", "you won", "congratulations", "abhinandan", "reward milala", "बक्षीस मिळाले आहे", "reward mila", 
 "aap jit gaye", "mubarak", "आप जीत गए", "मुबारक", "अभिनंदन" ]
 
@@ -24,9 +20,6 @@ safe_patterns = ["otp share mat karo", "otp share nahi karo","do not share otp",
 action_words = [
     "click", "visit", "open", "use", "check", "वापरा" , "इस्तेमाल", "करा", "करें" ,
     "kar", "kara", "karaycha", "vapra"]
-
-link_indicators = [
-    "link", "http", "www", ".com", ".in"]
 
 urgency_words = [
     "urgent", "immediately", "now",
@@ -62,7 +55,18 @@ def clean_text(text):
     text = text.replace("0","o")
     return text
 
-#to avoid false positives
+# ✅ NEW: Real link detection (NO regex)
+def has_real_link(text):
+    text = text.lower()
+    return (
+        "http://" in text or
+        "https://" in text or
+        "www." in text or
+        ".com" in text or
+        ".in" in text
+    )
+
+# to avoid false positives
 def no_suspicious_text(text):
    text_lower = text.lower()
    words = text_lower.split()
@@ -84,7 +88,8 @@ def detect_scam(text):
     
     raw_text = text
 
-    if no_suspicious_text(text) is True:
+    # SAFE override
+    if no_suspicious_text(text):
        return {
           "message" : text,
           "threat" : "safe",
@@ -94,13 +99,8 @@ def detect_scam(text):
 
     text = clean_text(text)
 
-    safe_detected = False
-    for word in safe_patterns: 
-     if word in raw_text.lower():
-        safe_detected = True
-        break
-
-    if safe_detected:
+    # Safe awareness messages
+    if any(word in raw_text.lower() for word in safe_patterns):
       return {
             "message": raw_text,
             "threat": "safe",
@@ -108,54 +108,63 @@ def detect_scam(text):
             "reasons": ["safe"]
         }
 
-    action_detected = any(word in raw_text.lower()  for word in action_words)
+    action_detected = any(word in raw_text.lower() for word in action_words)
     fear_detected = any(word in raw_text.lower() for word in fear_words)
-
-
-    link_detected = any(word in raw_text.lower() for word in link_indicators)
     urgency_detected = any(word in raw_text.lower() for word in urgency_words)
-    
+
+    # ✅ NEW: Proper link detection
+    link_detected = has_real_link(raw_text)
+    link_word_detected = "link" in raw_text.lower()
+
     otp_detected = any(fuzzy_match(word.replace(" ", ""), text) for word in otp_words)
     kyc_detected = any(fuzzy_match(word.replace(" ", ""), text) for word in kyc_words)
     reward_detected = any(fuzzy_match(word.replace(" ", ""), text) for word in reward_words)
 
-    #Score updation
+    # Score updation
     if action_detected:
         score += 1
+        reasons.add("action")
+
     if fear_detected:
         score += 2
         reasons.add("fear")
+
     if urgency_detected:
         score += 2
         reasons.add("urgency")
+
     if otp_detected:
         score += 3
         reasons.add("otp")
+
     if kyc_detected:
         score += 2
         reasons.add("kyc")
+
     if reward_detected:
         score += 1
         reasons.add("reward")
+
+    # ✅ Updated link scoring
     if link_detected:
-        score +=2
+        score += 2
         reasons.add("link")
 
-    #High-risk patterns
+    elif link_word_detected and action_detected:
+        score += 1   # weaker signal
+        reasons.add("action")
+
+    # High-risk patterns (ONLY real links)
     if otp_detected and (action_detected or link_detected):
       threat = "phishing"
-      print("OTP + action/link → phishing")
 
     elif kyc_detected and (link_detected or urgency_detected):
       threat = "phishing"
-      print("KYC + link/urgency → phishing")
 
     elif reward_detected and link_detected: 
       threat = "phishing"
-      print("Reward + link → phishing")
 
-    
-    #Classification based on scores
+    # Classification
     if not threat:  
      if score <= 2:
         threat = "safe"
@@ -175,6 +184,7 @@ def detect_scam(text):
         "score": score,
         "reasons": list(reasons)
     }
+
 
 if __name__ == "__main__":
     while True:
