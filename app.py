@@ -85,7 +85,7 @@ def show_results(result, original_text):
 
 # ---------- Tabs ----------
 
-tab1, tab2, tab3 = st.tabs(["📝 Text", "🖼️ Image", "🎤 Audio"])
+tab1, tab2, tab3, tab4 = st.tabs(["📝 Text", "🖼️ Image", "🎤 Audio", "📜 Logs"])
 
 # ---------------- TEXT INPUT ----------------
 with tab1:
@@ -174,9 +174,40 @@ with tab3:
         except Exception:
             st.error("Could not process audio. Please upload a clear WAV/MP3 file.")
 
-        st.markdown("---")
+# ---------------- LOGS VIEWER ----------------
+with tab4:
+    st.subheader("📜 Detection Logs")
 
-st.caption("THIS TOOL PROVIDES ADVISORY DETECTION. ALWAYS VERIFY WITH OFFICIAL SOURCES.")
+    try:
+        with open("logs.txt", "r", encoding="utf-8") as f:
+            logs = f.readlines()
+
+        if not logs:
+            st.info("No logs available yet.")
+        else:
+            # Show latest first
+            logs = logs[::-1]
+
+            # Optional: limit to last 20 logs
+            logs = logs[:20]
+
+            for log in logs:
+                if "PHISHING" in log:
+                    st.error(log.strip())
+                elif "SUSPICIOUS" in log:
+                    st.warning(log.strip())
+                else:
+                    st.success(log.strip())
+
+    except FileNotFoundError:
+        st.warning("No logs file found yet. Run some detections first.")
+
+if st.button("🗑️ Clear Logs"):
+    open("logs.txt", "w").close()
+    st.success("Logs cleared!")
+
+with open("logs.txt", "r", encoding="utf-8") as f:
+    st.download_button("⬇️ Download Logs", f, file_name="logs.txt")
 
 
 
