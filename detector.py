@@ -37,6 +37,7 @@ explanations = {
     "link": "The message contains a link which could lead to phishing sites.",
     "kyc": "The message is asking for KYC or personal details.",
     "reward": "The message is trying to lure you with a fake reward.",
+    "fear": "The message uses fear tactics to pressure the user." ,
     "urgency": "The message creates urgency to pressure you." , 
     "action": "The message is requesting for some action"
 }
@@ -46,6 +47,7 @@ advice_map = {
     "link": "Do not click unknown links.",
     "kyc": "Do not share personal or banking details.",
     "reward": "Verify rewards from official sources.",
+    "fear": "Do not panic. Verify the message from official sources.",
     "urgency": "Take time and verify before acting.",
     "action": "Proceed only after verifying"
 }
@@ -56,33 +58,38 @@ def fuzzy_match(word, text, threshold=80):
 def clean_text(text):
     text = text.lower()
     text = text.replace("0","o")
-    text = text.replace(" ","")
     return text
 
+#to avoid false positives
 def no_suspicious_text(text):
-   raw_text = text
-   text = clean_text(text)
-   words = text.split()
-   if len(words) <=2:
-      return True
-   else:
-      return False
+   text_lower = text.lower()
+   words = text_lower.split()
+
+   suspicious_words = action_words + urgency_words + ["otp","link","kyc","account","verify","bank"]
+
+   if len(words) <=2 and text.isalpha():
+      if not any(word in text_lower for word in suspicious_words):
+       return True
+   
+   return False
+
 
 def detect_scam(text):
 
     reasons = set()
     threat = ""
     score = 0
+    
+    raw_text = text
 
     if no_suspicious_text(text) is True:
        return {
-          "message" : raw_text,
+          "message" : text,
           "threat" : "safe",
           "score": 0,
-          "reasons": 
+          "reasons": ["Simple non-suspicious input"]
        }
 
-    raw_text = text
     text = clean_text(text)
 
     safe_detected = False
@@ -91,15 +98,17 @@ def detect_scam(text):
         safe_detected = True
         break
 
-     if safe_detected:
+    if safe_detected:
       return {
             "message": raw_text,
             "threat": "safe",
             "score": 0,
-            "reasons": "Simple non-suspicious input"
+            "reasons": []
         }
 
     action_detected = any(word in raw_text.lower()  for word in action_words)
+    fear_detected = any(word in raw_text.lower() for word in fear_words)
+
 
     link_detected = any(word in raw_text.lower() for word in link_indicators)
     urgency_detected = any(word in raw_text.lower() for word in urgency_words)
@@ -111,6 +120,9 @@ def detect_scam(text):
     #Score updation
     if action_detected:
         score += 1
+    if fear_detected:
+        score += 2
+        reasons.add("fear")
     if urgency_detected:
         score += 2
         reasons.add("urgency")
