@@ -1,5 +1,6 @@
 import streamlit as st
 import detector
+import os
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
@@ -18,6 +19,9 @@ def generate_pdf(logs):
 
     with open("logs_report.pdf", "rb") as f:
         return f.read()
+    
+if os.path.exists("logs.txt"):
+    os.remove("logs.txt")
 
 st.set_page_config(page_title="Scam Detector", page_icon="🛡️")
 
@@ -193,9 +197,16 @@ with tab3:
             st.error("Could not process audio. Please upload a clear WAV/MP3 file.")
 
 # ---------------- LOGS VIEWER ----------------
-# ---------------- LOGS VIEWER ----------------
 with tab4:
     st.subheader("📜 Detection Logs")
+
+    # -------- CLEAR LOGS FIRST --------
+    if st.button("🗑️ Clear Logs"):
+        with open("logs.txt", "w", encoding="utf-8") as f:
+            f.truncate(0)
+
+        st.success("Logs cleared!")
+        st.rerun()
 
     # --- Controls ---
     search_query = st.text_input("🔍 Search logs")
@@ -220,11 +231,9 @@ with tab4:
             for log in logs:
                 log_upper = log.upper()
 
-                # Filter
                 if filter_option != "ALL" and filter_option not in log_upper:
                     continue
 
-                # Search
                 if search_query and search_query.lower() not in log.lower():
                     continue
 
@@ -244,14 +253,6 @@ with tab4:
     except FileNotFoundError:
         st.warning("No logs file found yet.")
 
-    # -------- CLEAR LOGS --------
-    if st.button("🗑️ Clear Logs"):
-        with open("logs.txt", "w", encoding="utf-8") as f:
-            f.truncate(0)
-
-        st.success("Logs cleared!")
-        st.rerun()
-
     # -------- DOWNLOAD PDF --------
     if logs:
         pdf_data = generate_pdf(logs)
@@ -264,7 +265,6 @@ with tab4:
         )
     else:
         st.warning("No logs to export.")
-
 
 
 st.caption("THIS TOOL PROVIDES ADVISORY DETECTION. ALWAYS VERIFY WITH OFFICIAL SOURCES.")
