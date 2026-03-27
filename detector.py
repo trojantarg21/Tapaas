@@ -26,12 +26,11 @@ reward_words = ["won a reward","you won","congratulations","abhinandan","reward 
 safe_patterns = ["otp share mat karo","otp share nahi karo","do not share otp","never share otp",
                  "otp deu naka","otp share karu naka","otp mat bhejiye","otp na bheje",
                  "ओटीपी ना भेजे","ओ टी पी देउ नका","otp share mat kare","ओटीपी शेयर ना करें",
-                 # NEW awareness additions
                  "do not click unknown links","never click unknown links",
                  "bank will never ask otp","never share otp"]
 
 action_words = ["click","visit","open","use","check","वापरा","इस्तेमाल","करा","करें",
-                "kar","kara","karaycha","vapra"]
+                "kar","kara","karaycha","vapra","bhejo", "send", "de", "do", "bhej", "share karo"]
 
 urgency_words = ["urgent","immediately","now","jaldi","turant","आत्ताच","जलदी"]
 
@@ -212,7 +211,12 @@ def detect_scam(text):
     link_word_detected = "link" in text
 
     otp_detected = any(fuzzy_match(word.replace(" ", ""), text) for word in otp_words)
-    kyc_detected = any(fuzzy_match(word.replace(" ", ""), text) for word in kyc_words)
+    kyc_detected = any(word in text for word in kyc_words) or \
+               any(fuzzy_match(word.replace(" ", ""), text) for word in kyc_words)
+    
+    if "kyc" in text:
+      kyc_detected = True
+
     reward_detected = any(fuzzy_match(word.replace(" ", ""), text) for word in reward_words)
 
     # Scoring
