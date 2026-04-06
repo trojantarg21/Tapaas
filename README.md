@@ -99,7 +99,7 @@ No machine learning model used (can be added in future)
 ## Future Enhancements
 Integration of Machine Learning models
 Improved language detection
-Voice-based advisory output
+Inclusion of audio files as input
 
 ## License
 This project is for educational purposes
