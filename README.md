@@ -98,7 +98,9 @@ No machine learning model used (can be added in future)
 
 ## Future Enhancements
 Integration of Machine Learning models
+
 Improved language detection
+
 Inclusion of audio files as input
 
 ## License
