@@ -1,29 +1,29 @@
 import streamlit as st
 import detector
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
+import os
+from datetime import datetime
 from langdetect import detect, DetectorFactory
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 
-DetectorFactory.seed = 0  # for consistent results
+DetectorFactory.seed = 0
 
+# ---------------- LANGUAGE DETECTION ----------------
 def detect_language_safe(text):
-    if len(text.split()) < 3:
-        return "Not enough text"
-
     try:
+        if any('\u0900' <= c <= '\u097F' for c in text):
+            return "Hindi/Marathi"
+
+        if len(text.split()) < 4:
+            return "Not enough text"
+
         lang = detect(text)
-
-        mapping = {
-            "en": "English",
-            "hi": "Hindi",
-            "mr": "Marathi"
-        }
-
-        return mapping.get(lang, "Unknown")
+        return {"en": "English", "hi": "Hindi", "mr": "Marathi"}.get(lang, "Unknown")
 
     except:
         return "Unknown"
-    
+
+# ---------------- LANGUAGE MAP ----------------
 def get_explanations_by_language(language):
     if language == "Hindi":
         return detector.explanations_hi
@@ -40,117 +40,77 @@ def get_advice_by_language(language):
     else:
         return detector.advice_map
 
-#log file generation in pdf format
-def generate_pdf(logs):
-    doc = SimpleDocTemplate("logs_report.pdf")
-    styles = getSampleStyleSheet()
+# ---------------- RESULT DISPLAY ----------------
+def show_results(result, original_text, preferred_lang):
 
-    content = []
+    detected_lang = detect_language_safe(original_text)
 
-    for log in logs:
-        content.append(Paragraph(log, styles["Normal"]))
-        content.append(Spacer(1, 10))
+    st.info(f"🌍 Detected Language: {detected_lang}")
+    st.info(f"🎯 Output Language: {preferred_lang}")
 
-    doc.build(content)
+    explanations_map = get_explanations_by_language(preferred_lang)
+    advice_map = get_advice_by_language(preferred_lang)
 
-    with open("logs_report.pdf", "rb") as f:
-        return f.read()
-    
-st.set_page_config(page_title="Scam Detector", page_icon="🛡️")
-
-st.title("🛡️ Multilingual Scam Detector")
-st.markdown("### 🔍 Analyze suspicious messages instantly")
-st.caption("Detect phishing messages via Text, Image, or Audio in English, Hindi and Marathi")
-
-st.divider()
-
-# ---------- Helper Functions ----------
-
-def get_color(threat):
-    if threat == "safe":
-        return "green"
-    elif threat == "suspicious":
-        return "orange"
+    # Threat display
+    if result["threat"] == "phishing":
+        st.error("🚨 PHISHING DETECTED")
+    elif result["threat"] == "suspicious":
+        st.warning("⚠️ Suspicious Message")
     else:
-        return "red"
+        st.success("✅ Safe Message")
 
-def highlight_text(text, reasons):
-    keywords = {
-        "otp": ["otp"],
-        "link": ["http", "www", "link"],
-        "kyc": ["kyc"],
-        "urgency": ["urgent", "now", "immediately"],
-        "action": ["click", "visit", "open"],
-        "fear": ["blocked", "suspended", "closed"]
-    }
-
-    text_lower = text.lower()
-
-    for r in reasons:
-        for word in keywords.get(r, []):
-            if word in text_lower:
-                text = text.replace(word, f":red[{word}]")
-
-    return text
-
-def show_results(result, original_text):
-
-    threat = result["threat"]
-    score = result["score"]
-    reasons = result["reasons"]
-
-    language = detect_language_safe(original_text)
-    st.info(f"🌍 Detected Language: {language}")
-
-    language = detect_language_safe(original_text)
-    selected_explanations = get_explanations_by_language(language)
-    selected_advice = get_advice_by_language(language)
-
-    color = get_color(threat)
-
-    # Threat Display
-    st.markdown(f"""
-    ### 🛡️ Threat Level: <span style='color:{color}'>{threat.upper()}</span>
-    """, unsafe_allow_html=True)
-
-    # Score
-    st.metric(label="Risk Score", value=score)
-    st.progress(min(score / 6, 1.0))
-
-    st.markdown("---")
-
-    # Highlighted Message
-    st.subheader("Analyzed Message")
-    highlighted = highlight_text(original_text, reasons)
-    st.markdown(highlighted)
-
+    st.metric(label="Risk Score", value=result["score"])
     st.markdown("---")
 
     # Explanation
     st.subheader("Explanation")
-
-    if reasons:
-        for r in reasons:
-            st.write("- " + selected_explanations.get(r, "No suspicious pattern detected"))
+    if result["reasons"]:
+        for r in result["reasons"]:
+            st.write("- " + explanations_map.get(r, "No suspicious pattern detected"))
     else:
-        st.success("No suspicious patterns detected.")
+        st.info("No strong threat indicators detected.")
 
     st.markdown("---")
 
     # Advice
     st.subheader("Advice")
+    if result["reasons"]:
+        for r in result["reasons"]:
+            st.write("- " + advice_map.get(r, "No action needed"))
 
-    if reasons:
-        for r in reasons:
-            st.write("- " + selected_advice.get(r, "No action needed"))
-    else:
-        st.success("No action needed. This message appears safe.")
+# ---------------- PDF GENERATION ----------------
+def generate_pdf(logs):
+    file_path = "logs.pdf"
+    doc = SimpleDocTemplate(file_path)
+    styles = getSampleStyleSheet()
 
-# ---------- Tabs ----------
+    content = []
+    for log in logs:
+        content.append(Paragraph(log.strip(), styles["Normal"]))
 
+    doc.build(content)
+    return file_path
+
+# ---------------- APP UI ----------------
+
+st.set_page_config(page_title="Tapaas", page_icon="🛡️")
+
+st.title("🛡️ Tapaas")
+st.markdown("### Multilingual Phishing Detection System")
+st.caption("Analyze suspicious messages via Text, Image, or Audio")
+
+st.divider()
+
+# 🌍 User language preference (NEW FEATURE)
+preferred_lang = st.selectbox(
+    "🌍 Choose your preferred output language",
+    ["English", "Hindi", "Marathi"]
+)
+
+# Tabs
 tab1, tab2, tab3, tab4 = st.tabs(["📝 Text", "🖼️ Image", "🎤 Audio", "📜 Logs"])
 
-# ---------------- TEXT INPUT ----------------
+# ---------------- TEXT ----------------
 with tab1:
     user_input = st.text_area("Enter message")
 
@@ -159,19 +119,11 @@ with tab1:
             st.warning("Please enter a message")
         else:
             result = detector.detect_scam(user_input)
+            show_results(result, user_input, preferred_lang)
 
-            if result["threat"] == "phishing":
-                st.error("🚨 PHISHING DETECTED")
-            elif result["threat"] == "suspicious":
-                st.warning("⚠️ Suspicious Message")
-            else:
-                st.success("✅ Safe Message")
-
-            show_results(result, user_input)
-
-# ---------------- IMAGE INPUT ----------------
+# ---------------- IMAGE ----------------
 with tab2:
-    uploaded_file = st.file_uploader("Upload image (SMS screenshot)", type=["png", "jpg", "jpeg"])
+    uploaded_file = st.file_uploader("Upload image", type=["png", "jpg", "jpeg"])
 
     if uploaded_file:
         from PIL import Image
@@ -181,33 +133,21 @@ with tab2:
         image = Image.open(uploaded_file)
         st.image(image, caption="Uploaded Image")
 
-        try:
-            reader = easyocr.Reader(['en'])
-            img_array = np.array(image)
+        reader = easyocr.Reader(['en'])
+        img_array = np.array(image)
 
-            results = reader.readtext(img_array, detail=0)
-            text = " ".join(results)
+        results = reader.readtext(img_array, detail=0)
+        text = " ".join(results)
 
-            st.subheader("Extracted Text")
-            st.write(text)
+        st.subheader("Extracted Text")
+        st.write(text)
 
-            result = detector.detect_scam(text)
+        result = detector.detect_scam(text)
+        show_results(result, text, preferred_lang)
 
-            if result["threat"] == "phishing":
-                st.error("🚨 PHISHING DETECTED")
-            elif result["threat"] == "suspicious":
-                st.warning("⚠️ Suspicious Message")
-            else:
-                st.success("✅ Safe Message")
-
-            show_results(result, text)
-
-        except Exception as e:
-            st.error(f"OCR failed: {e}")
-
-# ---------------- AUDIO INPUT ----------------
+# ---------------- AUDIO ----------------
 with tab3:
-    audio_file = st.file_uploader("Upload audio (WAV recommended)", type=["wav", "mp3"])
+    audio_file = st.file_uploader("Upload audio", type=["wav", "mp3"])
 
     if audio_file:
         import speech_recognition as sr
@@ -224,88 +164,68 @@ with tab3:
             st.write(text)
 
             result = detector.detect_scam(text)
+            show_results(result, text, preferred_lang)
 
-            if result["threat"] == "phishing":
-                st.error("🚨 PHISHING DETECTED")
-            elif result["threat"] == "suspicious":
-                st.warning("⚠️ Suspicious Message")
-            else:
-                st.success("✅ Safe Message")
+        except:
+            st.error("Could not process audio.")
 
-            show_results(result, text)
-
-        except Exception:
-            st.error("Could not process audio. Please upload a clear WAV/MP3 file.")
-
-# ---------------- LOGS VIEWER ----------------
+# ---------------- LOGS ----------------
 with tab4:
-    st.subheader("📜 Detection Logs")
 
-    # -------- CLEAR LOGS FIRST --------
+    # Clear logs FIRST
     if st.button("🗑️ Clear Logs"):
         with open("logs.txt", "w", encoding="utf-8") as f:
             f.truncate(0)
-
         st.success("Logs cleared!")
         st.rerun()
 
-    # --- Controls ---
     search_query = st.text_input("🔍 Search logs")
-    filter_option = st.selectbox(
-        "Filter by threat level",
-        ["ALL", "SAFE", "SUSPICIOUS", "PHISHING"]
-    )
+    filter_option = st.selectbox("Filter", ["All", "Phishing", "Suspicious", "Safe"])
 
-    logs = []
-
-    try:
+    if os.path.exists("logs.txt"):
         with open("logs.txt", "r", encoding="utf-8") as f:
             logs = f.readlines()
 
-        if not logs:
-            st.info("No logs available yet.")
+        filtered_logs = []
+
+        for log in logs:
+            if search_query.lower() not in log.lower():
+                continue
+
+            if filter_option == "Phishing" and "PHISHING" not in log:
+                continue
+            elif filter_option == "Suspicious" and "SUSPICIOUS" not in log:
+                continue
+            elif filter_option == "Safe" and "SAFE" not in log:
+                continue
+
+            filtered_logs.append(log)
+
+        if filtered_logs:
+            for log in reversed(filtered_logs):
+                if "PHISHING" in log:
+                    st.error(log)
+                elif "SUSPICIOUS" in log:
+                    st.warning(log)
+                else:
+                    st.success(log)
+
+            # PDF Download
+            pdf_file = generate_pdf(filtered_logs)
+
+            with open(pdf_file, "rb") as f:
+                st.download_button(
+                    "📄 Download Logs as PDF",
+                    f,
+                    file_name="logs.pdf",
+                    mime="application/pdf"
+                )
         else:
-            logs = logs[::-1]  # latest first
-
-            filtered_logs = []
-
-            for log in logs:
-                log_upper = log.upper()
-
-                if filter_option != "ALL" and filter_option not in log_upper:
-                    continue
-
-                if search_query and search_query.lower() not in log.lower():
-                    continue
-
-                filtered_logs.append(log)
-
-            if not filtered_logs:
-                st.warning("No matching logs found.")
-            else:
-                for log in filtered_logs:
-                    if "PHISHING" in log:
-                        st.error(log.strip())
-                    elif "SUSPICIOUS" in log:
-                        st.warning(log.strip())
-                    else:
-                        st.success(log.strip())
-
-    except FileNotFoundError:
-        st.warning("No logs file found yet.")
-
-    # -------- DOWNLOAD PDF --------
-    if logs:
-        pdf_data = generate_pdf(logs)
-
-        st.download_button(
-            label="📄 Download Logs as PDF",
-            data=pdf_data,
-            file_name="scam_detection_logs.pdf",
-            mime="application/pdf"
-        )
+            st.info("No logs found.")
     else:
-        st.warning("No logs to export.")
+        st.info("No logs available.")
+
+st.caption("This tool provides advisory detection. Always verify with official sources.")
 
 
-st.caption("THIS TOOL PROVIDES ADVISORY DETECTION. ALWAYS VERIFY WITH OFFICIAL SOURCES.")
+
