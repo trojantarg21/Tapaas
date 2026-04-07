@@ -8,7 +8,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 
 DetectorFactory.seed = 0
 
-# ---------------- LANGUAGE DETECTION ----------------
+#LANGUAGE DETECTION
 def detect_language_safe(text):
     try:
         if any('\u0900' <= c <= '\u097F' for c in text):
@@ -23,7 +23,7 @@ def detect_language_safe(text):
     except:
         return "Unknown"
 
-# ---------------- LANGUAGE MAP ----------------
+#LANGUAGE MAP
 def get_explanations_by_language(language):
     if language == "Hindi":
         return detector.explanations_hi
@@ -40,7 +40,7 @@ def get_advice_by_language(language):
     else:
         return detector.advice_map
 
-# ---------------- RESULT DISPLAY ----------------
+#RESULT DISPLAY
 def show_results(result, original_text, preferred_lang):
 
     detected_lang = detect_language_safe(original_text)
@@ -78,7 +78,7 @@ def show_results(result, original_text, preferred_lang):
         for r in result["reasons"]:
             st.write("- " + advice_map.get(r, "No action needed"))
 
-# ---------------- PDF GENERATION ----------------
+# PDF GENERATION
 def generate_pdf(logs):
     file_path = "logs.pdf"
     doc = SimpleDocTemplate(file_path)
@@ -91,7 +91,7 @@ def generate_pdf(logs):
     doc.build(content)
     return file_path
 
-# ---------------- APP UI ----------------
+#APP UI
 
 st.set_page_config(page_title="Tapaas", page_icon="🛡️")
 
@@ -101,7 +101,7 @@ st.caption("Analyze suspicious messages via Text, Image, or Audio")
 
 st.divider()
 
-# 🌍 User language preference (NEW FEATURE)
+#User language preference
 preferred_lang = st.selectbox(
     "🌍 Choose your preferred output language",
     ["English", "Hindi", "Marathi"]
@@ -110,7 +110,7 @@ preferred_lang = st.selectbox(
 # Tabs
 tab1, tab2, tab3, tab4 = st.tabs(["📝 Text", "🖼️ Image", "🎤 Audio", "📜 Logs"])
 
-# ---------------- TEXT ----------------
+#TEXT
 with tab1:
     user_input = st.text_area("Enter message")
 
@@ -121,7 +121,7 @@ with tab1:
             result = detector.detect_scam(user_input)
             show_results(result, user_input, preferred_lang)
 
-# ---------------- IMAGE ----------------
+#IMAGE
 with tab2:
     uploaded_file = st.file_uploader("Upload image", type=["png", "jpg", "jpeg"])
 
@@ -145,7 +145,7 @@ with tab2:
         result = detector.detect_scam(text)
         show_results(result, text, preferred_lang)
 
-# ---------------- AUDIO ----------------
+#AUDIO
 with tab3:
     audio_file = st.file_uploader("Upload audio", type=["wav", "mp3"])
 
@@ -169,7 +169,7 @@ with tab3:
         except:
             st.error("Could not process audio.")
 
-# ---------------- LOGS ----------------
+# LOGS
 with tab4:
 
     # Clear logs FIRST
@@ -226,6 +226,3 @@ with tab4:
         st.info("No logs available.")
 
 st.caption("This tool provides advisory detection. Always verify with official sources.")
-
-
-
