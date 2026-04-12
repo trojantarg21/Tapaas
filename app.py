@@ -83,24 +83,99 @@ def show_results(result, original_text, preferred_lang):
             st.write("- " + advice_map.get(r, "No action needed"))
 
 # PDF GENERATION
-from reportlab.platypus import SimpleDocTemplate, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 def generate_pdf(logs):
+
     file_path = "logs.pdf"
+
+    # Register Unicode font
+    pdfmetrics.registerFont(TTFont("Devanagari", "NotoSansDevanagari-Regular.ttf"))
+
     doc = SimpleDocTemplate(file_path)
     styles = getSampleStyleSheet()
 
-    # Modify style to use Unicode font
-    style = styles["Normal"]
-    style.fontName = "Devanagari"
+    # Custom styles
+    title_style = ParagraphStyle(
+        name="TitleStyle",
+        fontName="Devanagari",
+        fontSize=16,
+        leading=20,
+        alignment=1  # center
+    )
+
+    subtitle_style = ParagraphStyle(
+        name="SubTitle",
+        fontName="Devanagari",
+        fontSize=10,
+        alignment=1
+    )
+
+    normal_style = ParagraphStyle(
+        name="NormalStyle",
+        fontName="Devanagari",
+        fontSize=9
+    )
 
     content = []
 
+    # ---------------- HEADER ----------------
+    content.append(Paragraph("🛡️ Tapaas", title_style))
+    content.append(Paragraph("Multilingual Phishing Detection Log Report", subtitle_style))
+    content.append(Spacer(1, 12))
+
+    # ---------------- TABLE DATA ----------------
+    table_data = [["Timestamp", "Threat", "Score", "Message"]]
+
     for log in logs:
-        content.append(Paragraph(log.strip(), style))
+        try:
+            # Example log format:
+            # [2026-04-12 20:10:00] PHISHING | Score: 5 | Message: text
+
+            parts = log.split("|")
+
+            timestamp = parts[0].strip().replace("[", "").replace("]", "")
+            threat = parts[0].split("]")[1].strip()
+            score = parts[1].split(":")[1].strip()
+            message = parts[2].replace("Message:", "").strip()
+
+            table_data.append([
+                Paragraph(timestamp, normal_style),
+                Paragraph(threat, normal_style),
+                Paragraph(score, normal_style),
+                Paragraph(message, normal_style)
+            ])
+
+        except:
+            # fallback if parsing fails
+            table_data.append(["-", "-", "-", Paragraph(log.strip(), normal_style)])
+
+    # ---------------- TABLE ----------------
+    table = Table(table_data, colWidths=[90, 70, 50, 250])
+
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+
+        ("FONTNAME", (0, 0), (-1, -1), "Devanagari"),
+
+        ("ALIGN", (1, 1), (2, -1), "CENTER"),
+
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
+    ]))
+
+    content.append(table)
 
     doc.build(content)
+
     return file_path
 
 #APP UI
