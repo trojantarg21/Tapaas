@@ -83,29 +83,21 @@ def show_results(result, original_text, preferred_lang):
             st.write("- " + advice_map.get(r, "No action needed"))
 
 # PDF GENERATION
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-
 def generate_pdf(logs):
 
     file_path = "logs.pdf"
 
-    # Register Unicode font
-    pdfmetrics.registerFont(TTFont("Devanagari", "NotoSansDevanagari-Regular.ttf"))
+    pdfmetrics.registerFont(TTFont("Devanagari", "NotoSansDevanagari-VariableFont_wdth,wght.ttf"))
 
     doc = SimpleDocTemplate(file_path)
     styles = getSampleStyleSheet()
 
-    # Custom styles
     title_style = ParagraphStyle(
         name="TitleStyle",
         fontName="Devanagari",
         fontSize=16,
         leading=20,
-        alignment=1  # center
+        alignment=1
     )
 
     subtitle_style = ParagraphStyle(
@@ -123,12 +115,12 @@ def generate_pdf(logs):
 
     content = []
 
-    # ---------------- HEADER ----------------
+    #HEADER
     content.append(Paragraph("🛡️ Tapaas", title_style))
     content.append(Paragraph("Multilingual Phishing Detection Log Report", subtitle_style))
     content.append(Spacer(1, 12))
 
-    # ---------------- TABLE DATA ----------------
+    # TABLE DATA
     table_data = [["Timestamp", "Threat", "Score", "Message"]]
 
     for log in logs:
@@ -151,10 +143,9 @@ def generate_pdf(logs):
             ])
 
         except:
-            # fallback if parsing fails
             table_data.append(["-", "-", "-", Paragraph(log.strip(), normal_style)])
 
-    # ---------------- TABLE ----------------
+    #TABLE
     table = Table(table_data, colWidths=[90, 70, 50, 250])
 
     table.setStyle(TableStyle([
