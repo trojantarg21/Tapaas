@@ -5,23 +5,23 @@ import re
 
 init(autoreset=True)
 
-# ---------------- WORD LISTS ----------------
+#WORD LISTS
 
 otp_words = ["otp","one time password","otp dya","otp pathva","otp send","otp share","otp deu","ओटीपी",
              "otp dijiye","otp bhejiye","ओटीपी भेजिये"]
 
 fear_words = ["account closed","account terminated","account band hoil","account blocked",
-              "account suspended","अकाउंट ब्लॉक","बंद होणार","account band ho jayega"]
+              "account suspended","अकाउंट ब्लॉक","बंद होणार","account band ho jayega", "खाते बंद होईल", 
+              "खाते बंद", "बंद होईल", "खाता बंद हो जाएगा", "खाता बंद"]
 
 kyc_words = ["kyc","kyc update","kyc pending","verify kyc","confirm account","update details",
              "माहिती अपडेट करा","KYC अपडेट","update your kyc",
-             # NEW multilingual additions
              "kyc update kara","kyc update करा","kyc verify kare","kyc verify करें",
              "kyc verify करा","account verify करा"]
 
 reward_words = ["won a reward","you won","congratulations","abhinandan","reward milala",
                 "बक्षीस मिळाले आहे","reward mila","aap jit gaye","mubarak","आप जीत गए",
-                "मुबारक","अभिनंदन"]
+                "मुबारक","अभिनंदन", "जीते", "जीत गए", "बधाई", "इनाम"]
 
 safe_patterns = ["otp share mat karo","otp share nahi karo","do not share otp","never share otp",
                  "otp deu naka","otp share karu naka","otp mat bhejiye","otp na bheje",
@@ -30,9 +30,10 @@ safe_patterns = ["otp share mat karo","otp share nahi karo","do not share otp","
                  "bank will never ask otp","never share otp"]
 
 action_words = ["click","visit","open","use","check","वापरा","इस्तेमाल","करा","करें",
-                "kar","kara","karaycha","vapra","bhejo", "send", "de", "do", "bhej", "share karo"]
+                "kar","kara","karaycha","vapra","bhejo", "send", "de", "do", "bhej", "share karo", "क्लिक करें", "क्लिक", "दबाएं"]
 
-urgency_words = ["urgent","immediately","now","jaldi","turant","आत्ताच","जलदी"]
+urgency_words = ["urgent","immediately","now","jaldi","turant","आत्ताच","जलदी", "लगेच", 
+                 "आत्ता", "ताबडतोब", "तुरंत", "अभी"]
 
 explanations = {
     "otp": "The message is asking for OTP, which is sensitive information.",
@@ -100,7 +101,7 @@ advice_map_mr = {
     "safe": "कोणतीही कृती आवश्यक नाही."
 }
 
-# ---------------- UTIL FUNCTIONS ----------------
+#UTIL FUNCTIONS
 
 def fuzzy_match(word, text, threshold=80):
     return fuzz.partial_ratio(word, text) >= threshold
@@ -168,7 +169,7 @@ def no_suspicious_text(text):
 def is_single_word(text):
     return len(text.strip().split()) == 1
 
-# ---------------- MAIN FUNCTION ----------------
+#MAIN FUNCTION
 
 def detect_scam(text):
 
@@ -219,9 +220,21 @@ def detect_scam(text):
 
     reward_detected = any(fuzzy_match(word.replace(" ", ""), text) for word in reward_words)
 
+    if "otp" in text and ("do not share" in text or "not share" in text):
+      log_result("safe", 0, raw_text)
+      return {
+        "message": raw_text,
+        "threat": "safe",
+        "score": 0,
+        "reasons": ["safe"]
+    }
+    
+    if (fear_detected and urgency_detected) or (reward_detected and action_detected):
+     threat = "phishing"
+     
     # Scoring
     if action_detected:
-        score += 2   # boosted
+        score += 2 
         reasons.add("action")
 
     if fear_detected:
