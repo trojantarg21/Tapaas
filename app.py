@@ -116,7 +116,7 @@ def generate_pdf(logs):
     content = []
 
     #HEADER
-    content.append(Paragraph("🛡️ Tapaas", title_style))
+    content.append(Paragraph("TAPAAS", title_style))
     content.append(Paragraph("Multilingual Phishing Detection Log Report", subtitle_style))
     content.append(Spacer(1, 12))
 
