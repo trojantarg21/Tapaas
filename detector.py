@@ -35,6 +35,10 @@ action_words = ["click","visit","open","use","check","वापरा","इस�
 urgency_words = ["urgent","immediately","now","jaldi","turant","आत्ताच","जलदी", "लगेच", 
                  "आत्ता", "ताबडतोब", "तुरंत", "अभी"]
 
+hindi_keywords = ["जीते", "इनाम", "बधाई", "क्लिक", "तुरंत", "अभी", "सत्यापित", "खाता", "बंद"]
+
+marathi_keywords = ["जिंकलात", "बक्षीस", "लगेच", "तपासा", "खाते", "बंद", "ताबडतोब"]
+
 explanations = {
     "otp": "The message is asking for OTP, which is sensitive information.",
     "link": "The message contains a link which could lead to phishing sites.",
@@ -207,6 +211,8 @@ def detect_scam(text):
     action_detected = any(word in text for word in action_words)
     fear_detected = any(word in text for word in fear_words)
     urgency_detected = any(word in text for word in urgency_words)
+    hindi_detected = any(word in raw_text for word in hindi_keywords)
+    marathi_detected = any(word in raw_text for word in marathi_keywords)
 
     link_detected = has_real_link(text)
     link_word_detected = "link" in text
@@ -231,7 +237,7 @@ def detect_scam(text):
     
     if (fear_detected and urgency_detected) or (reward_detected and action_detected):
      threat = "phishing"
-     
+
     # Scoring
     if action_detected:
         score += 2 
@@ -256,6 +262,10 @@ def detect_scam(text):
     if reward_detected:
         score += 1
         reasons.add("reward")
+    
+    if hindi_detected or marathi_detected:
+      score += 2
+      reasons.add("action")
 
     if link_detected:
         score += 2
@@ -267,6 +277,9 @@ def detect_scam(text):
     # High-risk patterns
     if otp_detected and (action_detected or link_detected):
         threat = "phishing"
+    
+    elif (hindi_detected and ("क्लिक" in raw_text or "लिंक" in raw_text)) or (marathi_detected and ("तपासा" in raw_text or "लगेच" in raw_text)) or ("बंद" in raw_text and ("तुरंत" in raw_text or "अभी" in raw_text)):
+       threat = "phishing"
 
     elif kyc_detected and link_detected:
         threat = "phishing"
