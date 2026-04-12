@@ -5,6 +5,10 @@ from datetime import datetime
 from langdetect import detect, DetectorFactory
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+pdfmetrics.registerFont(TTFont("Devanagari", "NotoSansDevanagari-VariableFont_wdth,wght.ttf"))
 
 DetectorFactory.seed = 0
 
@@ -79,14 +83,22 @@ def show_results(result, original_text, preferred_lang):
             st.write("- " + advice_map.get(r, "No action needed"))
 
 # PDF GENERATION
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+
 def generate_pdf(logs):
     file_path = "logs.pdf"
     doc = SimpleDocTemplate(file_path)
     styles = getSampleStyleSheet()
 
+    # Modify style to use Unicode font
+    style = styles["Normal"]
+    style.fontName = "Devanagari"
+
     content = []
+
     for log in logs:
-        content.append(Paragraph(log.strip(), styles["Normal"]))
+        content.append(Paragraph(log.strip(), style))
 
     doc.build(content)
     return file_path
@@ -97,7 +109,7 @@ st.set_page_config(page_title="Tapaas", page_icon="🛡️")
 
 st.title("🛡️ Tapaas")
 st.markdown("### Multilingual Phishing Detection System")
-st.caption("Analyze suspicious messages via Text, Image, or Audio")
+st.caption("Analyze suspicious messages via Text or Image")
 
 st.divider()
 
@@ -108,7 +120,7 @@ preferred_lang = st.selectbox(
 )
 
 # Tabs
-tab1, tab2, tab3, tab4 = st.tabs(["📝 Text", "🖼️ Image", "🎤 Audio", "📜 Logs"])
+tab1, tab2, tab3 = st.tabs(["📝 Text", "🖼️ Image", "📜 Logs"])
 
 #TEXT
 with tab1:
@@ -145,32 +157,8 @@ with tab2:
         result = detector.detect_scam(text)
         show_results(result, text, preferred_lang)
 
-#AUDIO
-with tab3:
-    audio_file = st.file_uploader("Upload audio", type=["wav", "mp3"])
-
-    if audio_file:
-        import speech_recognition as sr
-
-        recognizer = sr.Recognizer()
-
-        try:
-            with sr.AudioFile(audio_file) as source:
-                audio_data = recognizer.record(source)
-
-            text = recognizer.recognize_google(audio_data)
-
-            st.subheader("Recognized Speech")
-            st.write(text)
-
-            result = detector.detect_scam(text)
-            show_results(result, text, preferred_lang)
-
-        except:
-            st.error("Could not process audio.")
-
 # LOGS
-with tab4:
+with tab3:
 
     # Clear logs FIRST
     if st.button("🗑️ Clear Logs"):
